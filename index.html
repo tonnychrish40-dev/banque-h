@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banque Christophe — Connexion</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏦</text></svg>">
+</head>
+<body>
+
+<div id="page-loader">
+  <div class="loader-logo">
+    <h1>🏦 Banque Christophe</h1>
+    <div class="loader-bar"></div>
+  </div>
+</div>
+
+<div class="auth-page">
+  <!-- Panneau gauche -->
+  <div class="auth-left">
+    <div class="auth-brand">
+      <div class="logo-icon">🏦</div>
+      <h1>Banque<br><span>Christophe</span></h1>
+      <p>Votre partenaire financier de confiance</p>
+      <div class="auth-features">
+        <div class="auth-feature"><div class="dot"></div>Virements instantanés sécurisés</div>
+        <div class="auth-feature"><div class="dot"></div>Gestion complète de vos comptes</div>
+        <div class="auth-feature"><div class="dot"></div>Notifications en temps réel</div>
+        <div class="auth-feature"><div class="dot"></div>Support administrateur dédié</div>
+        <div class="auth-feature"><div class="dot"></div>Historique complet des transactions</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panneau droit -->
+  <div class="auth-right">
+    <div class="auth-form-container">
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="showAuthTab('connexion')">Connexion</button>
+        <button class="auth-tab" onclick="showAuthTab('inscription')">Créer un compte</button>
+      </div>
+
+      <!-- CONNEXION -->
+      <div id="tab-connexion">
+        <h2 class="auth-form-title serif">Bon retour</h2>
+        <p class="auth-form-subtitle">Connectez-vous à votre espace bancaire</p>
+        <div id="alert-connexion"></div>
+        <div class="form-group">
+          <label class="form-label">Adresse email</label>
+          <input type="email" id="login-email" class="form-control" placeholder="votre@email.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mot de passe</label>
+          <input type="password" id="login-mdp" class="form-control" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn btn-gold btn-full" onclick="seConnecter()" id="btn-connexion">
+          Se connecter
+        </button>
+        <p style="text-align:center;margin-top:1.5rem;font-size:0.85rem;color:var(--gray-400)">
+          Pas encore de compte ? <a href="#" onclick="showAuthTab('inscription')" style="color:var(--navy);font-weight:500">Créer un compte</a>
+        </p>
+      </div>
+
+      <!-- INSCRIPTION -->
+      <div id="tab-inscription" style="display:none">
+        <h2 class="auth-form-title serif">Ouvrir un compte</h2>
+        <p class="auth-form-subtitle">Rejoignez la Banque Christophe aujourd'hui</p>
+        <div id="alert-inscription"></div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Prénom *</label>
+            <input type="text" id="reg-prenom" class="form-control" placeholder="Jean">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nom *</label>
+            <input type="text" id="reg-nom" class="form-control" placeholder="Dupont">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email *</label>
+          <input type="email" id="reg-email" class="form-control" placeholder="jean.dupont@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mot de passe * (min. 6 caractères)</label>
+          <input type="password" id="reg-mdp" class="form-control" placeholder="••••••••">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Téléphone</label>
+            <input type="tel" id="reg-tel" class="form-control" placeholder="+33 6 00 00 00 00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Type de compte</label>
+            <select id="reg-type" class="form-control">
+              <option value="courant">Compte courant</option>
+              <option value="epargne">Compte épargne</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Adresse</label>
+          <input type="text" id="reg-adresse" class="form-control" placeholder="12 rue de la Paix, Paris">
+        </div>
+        <button class="btn btn-gold btn-full" onclick="sInscrire()" id="btn-inscription">
+          Créer mon compte
+        </button>
+        <p style="text-align:center;margin-top:1.5rem;font-size:0.85rem;color:var(--gray-400)">
+          Déjà client ? <a href="#" onclick="showAuthTab('connexion')" style="color:var(--navy);font-weight:500">Se connecter</a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// Loader
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('page-loader').classList.add('hidden'), 1800);
+});
+
+// Vérifier session
+fetch('php/auth.php?action=verifier_session')
+  .then(r => r.json())
+  .then(data => {
+    if (data.connecte) {
+      window.location.href = data.role === 'admin' ? 'admin.html' : 'dashboard.html';
+    }
+  }).catch(() => {});
+
+function showAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && tab === 'connexion') || (i === 1 && tab === 'inscription'));
+  });
+  document.getElementById('tab-connexion').style.display = tab === 'connexion' ? 'block' : 'none';
+  document.getElementById('tab-inscription').style.display = tab === 'inscription' ? 'block' : 'none';
+}
+
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  setTimeout(() => el.innerHTML = '', 5000);
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (loading) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Chargement...';
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = btnId === 'btn-connexion' ? 'Se connecter' : 'Créer mon compte';
+  }
+}
+
+async function seConnecter() {
+  const email = document.getElementById('login-email').value.trim();
+  const mdp = document.getElementById('login-mdp').value;
+  if (!email || !mdp) { showAlert('alert-connexion', 'Veuillez remplir tous les champs.', 'danger'); return; }
+  setLoading('btn-connexion', true);
+  try {
+    const fd = new FormData();
+    fd.append('action', 'connexion'); fd.append('email', email); fd.append('mot_de_passe', mdp);
+    const res = await fetch('php/auth.php', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.success) {
+      showAlert('alert-connexion', '✓ ' + data.message, 'success');
+      setTimeout(() => window.location.href = data.redirect, 800);
+    } else {
+      showAlert('alert-connexion', data.message, 'danger');
+      setLoading('btn-connexion', false);
+    }
+  } catch { showAlert('alert-connexion', 'Erreur de connexion.', 'danger'); setLoading('btn-connexion', false); }
+}
+
+async function sInscrire() {
+  const prenom = document.getElementById('reg-prenom').value.trim();
+  const nom = document.getElementById('reg-nom').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const mdp = document.getElementById('reg-mdp').value;
+  const tel = document.getElementById('reg-tel').value.trim();
+  const adresse = document.getElementById('reg-adresse').value.trim();
+  const type = document.getElementById('reg-type').value;
+  if (!prenom || !nom || !email || !mdp) { showAlert('alert-inscription', 'Remplissez tous les champs obligatoires (*).', 'danger'); return; }
+  setLoading('btn-inscription', true);
+  try {
+    const fd = new FormData();
+    fd.append('action','inscription'); fd.append('nom',nom); fd.append('prenom',prenom);
+    fd.append('email',email); fd.append('mot_de_passe',mdp); fd.append('telephone',tel);
+    fd.append('adresse',adresse); fd.append('type_compte',type);
+    const res = await fetch('php/auth.php', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.success) {
+      showAlert('alert-inscription', '✓ ' + data.message + ' Vous pouvez maintenant vous connecter.', 'success');
+      setTimeout(() => showAuthTab('connexion'), 2500);
+    } else { showAlert('alert-inscription', data.message, 'danger'); }
+    setLoading('btn-inscription', false);
+  } catch { showAlert('alert-inscription', 'Erreur.', 'danger'); setLoading('btn-inscription', false); }
+}
+
+// Enter key
+document.addEventListener('keypress', e => {
+  if (e.key === 'Enter') {
+    if (document.getElementById('tab-connexion').style.display !== 'none') seConnecter();
+    else sInscrire();
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banque Christophe — Mon Espace</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="page-loader">
+  <div class="loader-logo">
+    <h1>🏦 Banque Christophe</h1>
+    <div class="loader-bar"></div>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="navbar-brand" href="#">
+    <div class="brand-icon">B</div>
+    <h1>Banque <span>Christophe</span></h1>
+  </a>
+  <div class="navbar-nav">
+    <button class="nav-btn active" onclick="showPage('accueil')">🏠 Accueil</button>
+    <button class="nav-btn" onclick="showPage('transactions')">📋 Historique</button>
+    <button class="nav-btn" onclick="showPage('profil')">👤 Profil</button>
+    <button class="nav-btn" id="btn-notifs" onclick="showPage('notifications')">
+      🔔 <span id="badge-notifs" class="badge" style="display:none">0</span>
+    </button>
+  </div>
+  <div class="navbar-user">
+    <div class="user-avatar" id="user-avatar">?</div>
+    <span class="user-name" id="user-name">Chargement...</span>
+    <button class="nav-logout" onclick="seDeconnecter()">Déconnexion</button>
+  </div>
+</nav>
+
+<!-- PAGES -->
+<div class="app-container">
+
+  <!-- PAGE ACCUEIL -->
+  <div id="page-accueil" class="page active">
+    <div id="alert-global"></div>
+
+    <!-- Carte compte -->
+    <div class="compte-card" style="margin-bottom:1.5rem">
+      <div class="compte-chip"></div>
+      <div class="compte-type" id="compte-type">Compte Courant</div>
+      <div class="compte-numero" id="compte-numero">•••• •••• •••• ••••</div>
+      <div class="compte-solde-label">Solde disponible</div>
+      <div class="compte-solde">
+        <span id="solde-value">0.00</span>
+        <span class="currency"> €</span>
+      </div>
+      <div class="compte-nom" id="compte-nom">Chargement...</div>
+    </div>
+
+    <!-- Actions rapides -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-header">
+        <span class="card-title">Actions rapides</span>
+      </div>
+      <div class="action-buttons">
+        <div class="action-btn" onclick="openModal('modal-retrait')">
+          <div class="icon">💸</div>
+          <div class="label">Retrait</div>
+        </div>
+        <div class="action-btn" onclick="openModal('modal-virement')">
+          <div class="icon">↗️</div>
+          <div class="label">Virement</div>
+        </div>
+        <div class="action-btn" onclick="openModal('modal-depot-demande')">
+          <div class="icon">📥</div>
+          <div class="label">Demande dépôt</div>
+        </div>
+        <div class="action-btn" onclick="showPage('transactions')">
+          <div class="icon">📋</div>
+          <div class="label">Historique</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dernières transactions -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Dernières transactions</span>
+        <button class="btn btn-outline btn-sm" onclick="showPage('transactions')">Voir tout</button>
+      </div>
+      <div id="recent-transactions">
+        <div class="empty-state"><div class="icon">📊</div><p>Chargement...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE TRANSACTIONS -->
+  <div id="page-transactions" class="page">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title serif">Historique complet</span>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="filterTx('toutes',this)">Toutes</button>
+        <button class="tab-btn" onclick="filterTx('depot',this)">Dépôts</button>
+        <button class="tab-btn" onclick="filterTx('retrait',this)">Retraits</button>
+        <button class="tab-btn" onclick="filterTx('virement',this)">Virements</button>
+      </div>
+      <div id="all-transactions">
+        <div class="empty-state"><div class="icon">📋</div><p>Chargement...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE PROFIL -->
+  <div id="page-profil" class="page">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><span class="card-title serif">Mes informations</span></div>
+        <div id="profil-info">Chargement...</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title serif">Changer mon mot de passe</span></div>
+        <div id="alert-mdp"></div>
+        <div class="form-group">
+          <label class="form-label">Mot de passe actuel</label>
+          <input type="password" id="ancien-mdp" class="form-control" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nouveau mot de passe</label>
+          <input type="password" id="nouveau-mdp" class="form-control" placeholder="••••••••">
+        </div>
+        <button class="btn btn-primary" onclick="changerMdp()">Modifier</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE NOTIFICATIONS -->
+  <div id="page-notifications" class="page">
+    <div class="card">
+      <div class="card-header"><span class="card-title serif">Mes notifications</span></div>
+      <div id="notifs-list">Chargement...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL RETRAIT -->
+<div class="modal-overlay" id="modal-retrait">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">💸 Effectuer un retrait</span>
+      <button class="modal-close" onclick="closeModal('modal-retrait')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="alert-retrait"></div>
+      <div class="form-group">
+        <label class="form-label">Montant à retirer (max 5 000 €)</label>
+        <input type="number" id="retrait-montant" class="form-control" placeholder="0.00" min="1" max="5000" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Motif (optionnel)</label>
+        <input type="text" id="retrait-desc" class="form-control" placeholder="Ex: Dépenses courantes">
+      </div>
+      <p style="font-size:0.8rem;color:var(--gray-400)">⚠️ Solde disponible : <strong id="solde-modal-retrait">—</strong> €</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-retrait')">Annuler</button>
+      <button class="btn btn-primary" onclick="effectuerRetrait()" id="btn-retrait">Confirmer le retrait</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VIREMENT -->
+<div class="modal-overlay" id="modal-virement">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">↗️ Effectuer un virement</span>
+      <button class="modal-close" onclick="closeModal('modal-virement')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="alert-virement"></div>
+      <div class="form-group">
+        <label class="form-label">Numéro de compte destinataire</label>
+        <input type="text" id="virement-dest" class="form-control" placeholder="FR00000000000000">
+        <div class="form-hint">Format : FR suivi de 14 chiffres</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Montant (max 10 000 €)</label>
+        <input type="number" id="virement-montant" class="form-control" placeholder="0.00" min="1" max="10000" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Motif du virement</label>
+        <input type="text" id="virement-desc" class="form-control" placeholder="Ex: Loyer, Remboursement...">
+      </div>
+      <p style="font-size:0.8rem;color:var(--gray-400)">⚠️ Solde disponible : <strong id="solde-modal-virement">—</strong> €</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-virement')">Annuler</button>
+      <button class="btn btn-primary" onclick="effectuerVirement()" id="btn-virement">Confirmer le virement</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DEMANDE DÉPÔT -->
+<div class="modal-overlay" id="modal-depot-demande">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📥 Demande de dépôt</span>
+      <button class="modal-close" onclick="closeModal('modal-depot-demande')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="alert-depot"></div>
+      <div class="alert alert-info" style="margin-bottom:1rem">
+        ℹ️ Les dépôts sont traités par l'administrateur. Votre demande sera examinée rapidement.
+      </div>
+      <div class="form-group">
+        <label class="form-label">Montant souhaité</label>
+        <input type="number" id="depot-montant" class="form-control" placeholder="0.00" min="1" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Motif / Justification</label>
+        <textarea id="depot-motif" class="form-control" rows="3" placeholder="Ex: Virement depuis ma banque externe, Salaire..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-depot-demande')">Annuler</button>
+      <button class="btn btn-gold" onclick="demanderDepot()" id="btn-depot">Envoyer la demande</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+let dashboardData = null;
+let allTx = [];
+let currentFilter = 'toutes';
+
+// ==================== INIT ====================
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('page-loader').classList.add('hidden'), 1500);
+});
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const session = await checkSession();
+  if (!session) return;
+  loadDashboard();
+});
+
+async function checkSession() {
+  try {
+    const res = await fetch('php/auth.php?action=verifier_session');
+    const data = await res.json();
+    if (!data.connecte) { window.location.href = 'index.html'; return false; }
+    if (data.role === 'admin') { window.location.href = 'admin.html'; return false; }
+    document.getElementById('user-name').textContent = data.nom;
+    document.getElementById('user-avatar').textContent = data.nom.charAt(0).toUpperCase();
+    return true;
+  } catch { window.location.href = 'index.html'; return false; }
+}
+
+// ==================== DASHBOARD ====================
+async function loadDashboard() {
+  try {
+    const res = await fetch('php/client.php?action=dashboard');
+    const data = await res.json();
+    if (!data.success) { window.location.href = 'index.html'; return; }
+    dashboardData = data;
+
+    // Carte compte
+    document.getElementById('compte-type').textContent = data.compte.type_compte === 'courant' ? '💳 Compte Courant' : '💰 Compte Épargne';
+    document.getElementById('compte-numero').textContent = formatNumero(data.compte.numero_compte);
+    document.getElementById('solde-value').textContent = formatMontant(data.compte.solde);
+    document.getElementById('compte-nom').textContent = data.compte.prenom + ' ' + data.compte.nom;
+
+    // Notifs badge
+    if (data.nb_notifs > 0) {
+      document.getElementById('badge-notifs').style.display = 'inline';
+      document.getElementById('badge-notifs').textContent = data.nb_notifs;
+    }
+
+    // Transactions récentes
+    renderTransactions(data.transactions, 'recent-transactions', data.compte.id);
+
+    // Solde dans modals
+    document.getElementById('solde-modal-retrait').textContent = formatMontant(data.compte.solde);
+    document.getElementById('solde-modal-virement').textContent = formatMontant(data.compte.solde);
+
+  } catch (e) { showGlobalAlert('Erreur de chargement.', 'danger'); }
+}
+
+function renderTransactions(txs, containerId, compteId) {
+  const el = document.getElementById(containerId);
+  if (!txs || txs.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📊</div><p>Aucune transaction pour le moment</p></div>';
+    return;
+  }
+
+  const filtered = currentFilter === 'toutes' ? txs : txs.filter(t => t.type_transaction === currentFilter);
+
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>Aucune transaction de ce type</p></div>';
+    return;
+  }
+
+  const rows = filtered.map(tx => {
+    const isCredit = tx.compte_destination_id == compteId;
+    const sign = isCredit ? '+' : '-';
+    const amountClass = isCredit ? 'amount-positive' : 'amount-negative';
+    const badgeClass = {depot:'badge-depot', retrait:'badge-retrait', virement:'badge-virement'}[tx.type_transaction] || '';
+    const label = {depot:'📥 Dépôt', retrait:'💸 Retrait', virement:'↗️ Virement'}[tx.type_transaction] || tx.type_transaction;
+    return `
+      <tr>
+        <td>${formatDate(tx.date_transaction)}</td>
+        <td><span class="badge-tx ${badgeClass}">${label}</span></td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tx.description || '—'}</td>
+        <td><code style="font-size:0.75rem;color:var(--gray-400)">${tx.reference}</code></td>
+        <td class="${amountClass}">${sign}${formatMontant(tx.montant)} €</td>
+        <td style="color:var(--gray-400);font-size:0.83rem">${formatMontant(tx.solde_apres)} €</td>
+      </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Référence</th><th>Montant</th><th>Solde après</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ==================== HISTORIQUE ====================
+async function loadHistorique() {
+  try {
+    const res = await fetch('php/client.php?action=historique');
+    const data = await res.json();
+    if (data.success) {
+      allTx = data.transactions;
+      filterTx(currentFilter, null, true);
+    }
+  } catch {}
+}
+
+function filterTx(type, btn, skipLoad = false) {
+  currentFilter = type;
+  if (btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  if (!skipLoad && allTx.length === 0) { loadHistorique(); return; }
+
+  const filtered = type === 'toutes' ? allTx : allTx.filter(t => t.type_transaction === type);
+  const el = document.getElementById('all-transactions');
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>Aucune transaction</p></div>';
+    return;
+  }
+  const compteId = dashboardData?.compte?.id;
+  const rows = filtered.map(tx => {
+    const isCredit = tx.compte_destination_id == compteId;
+    const sign = isCredit ? '+' : '-';
+    const amountClass = isCredit ? 'amount-positive' : 'amount-negative';
+    const badgeClass = {depot:'badge-depot', retrait:'badge-retrait', virement:'badge-virement'}[tx.type_transaction] || '';
+    const label = {depot:'📥 Dépôt', retrait:'💸 Retrait', virement:'↗️ Virement'}[tx.type_transaction] || tx.type_transaction;
+    const contrepartie = tx.type_transaction === 'virement' ? (isCredit ? (tx.nom_source || tx.compte_source_numero) : (tx.nom_dest || tx.compte_dest_numero)) : '—';
+    return `
+      <tr>
+        <td>${formatDate(tx.date_transaction)}</td>
+        <td><span class="badge-tx ${badgeClass}">${label}</span></td>
+        <td>${contrepartie}</td>
+        <td>${tx.description || '—'}</td>
+        <td><code style="font-size:0.75rem;color:var(--gray-400)">${tx.reference}</code></td>
+        <td class="${amountClass}">${sign}${formatMontant(tx.montant)} €</td>
+        <td style="color:var(--gray-400);font-size:0.83rem">${formatMontant(tx.solde_apres)} €</td>
+      </tr>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Date</th><th>Type</th><th>Contrepartie</th><th>Description</th><th>Référence</th><th>Montant</th><th>Solde</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ==================== OPÉRATIONS ====================
+async function effectuerRetrait() {
+  const montant = parseFloat(document.getElementById('retrait-montant').value);
+  const desc = document.getElementById('retrait-desc').value.trim();
+  if (!montant || montant <= 0) { showAlert('alert-retrait', 'Entrez un montant valide.', 'danger'); return; }
+
+  const btn = document.getElementById('btn-retrait');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Traitement...';
+
+  const fd = new FormData();
+  fd.append('action','retrait'); fd.append('montant', montant); fd.append('description', desc || 'Retrait');
+  const res = await fetch('php/client.php', { method:'POST', body:fd });
+  const data = await res.json();
+
+  if (data.success) {
+    closeModal('modal-retrait');
+    showGlobalAlert('✓ ' + data.message, 'success');
+    updateSolde(data.nouveau_solde);
+    setTimeout(loadDashboard, 500);
+  } else { showAlert('alert-retrait', data.message, 'danger'); }
+  btn.disabled = false; btn.textContent = 'Confirmer le retrait';
+}
+
+async function effectuerVirement() {
+  const dest = document.getElementById('virement-dest').value.trim();
+  const montant = parseFloat(document.getElementById('virement-montant').value);
+  const desc = document.getElementById('virement-desc').value.trim();
+  if (!dest) { showAlert('alert-virement', 'Entrez le numéro de compte destinataire.', 'danger'); return; }
+  if (!montant || montant <= 0) { showAlert('alert-virement', 'Entrez un montant valide.', 'danger'); return; }
+
+  const btn = document.getElementById('btn-virement');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Traitement...';
+
+  const fd = new FormData();
+  fd.append('action','virement'); fd.append('numero_destination', dest); fd.append('montant', montant); fd.append('description', desc || 'Virement');
+  const res = await fetch('php/client.php', { method:'POST', body:fd });
+  const data = await res.json();
+
+  if (data.success) {
+    closeModal('modal-virement');
+    showGlobalAlert('✓ ' + data.message, 'success');
+    updateSolde(data.nouveau_solde);
+    setTimeout(loadDashboard, 500);
+  } else { showAlert('alert-virement', data.message, 'danger'); }
+  btn.disabled = false; btn.textContent = 'Confirmer le virement';
+}
+
+async function demanderDepot() {
+  const montant = parseFloat(document.getElementById('depot-montant').value);
+  const motif = document.getElementById('depot-motif').value.trim();
+  if (!montant || montant <= 0) { showAlert('alert-depot', 'Entrez un montant valide.', 'danger'); return; }
+
+  const btn = document.getElementById('btn-depot');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Envoi...';
+
+  const fd = new FormData();
+  fd.append('action','demande_depot'); fd.append('montant', montant); fd.append('motif', motif);
+  const res = await fetch('php/client.php', { method:'POST', body:fd });
+  const data = await res.json();
+
+  if (data.success) {
+    closeModal('modal-depot-demande');
+    showGlobalAlert('✓ ' + data.message, 'success');
+  } else { showAlert('alert-depot', data.message, 'danger'); }
+  btn.disabled = false; btn.textContent = 'Envoyer la demande';
+}
+
+// ==================== PROFIL ====================
+async function loadProfil() {
+  const res = await fetch('php/client.php?action=profil');
+  const data = await res.json();
+  if (!data.success) return;
+  const p = data.profil;
+  document.getElementById('profil-info').innerHTML = `
+    <div style="display:grid;gap:0.85rem">
+      <div style="display:flex;justify-content:space-between;padding-bottom:0.75rem;border-bottom:1px solid var(--gray-100)">
+        <span style="color:var(--gray-400);font-size:0.85rem">Nom complet</span>
+        <strong>${p.prenom} ${p.nom}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-bottom:0.75rem;border-bottom:1px solid var(--gray-100)">
+        <span style="color:var(--gray-400);font-size:0.85rem">Email</span>
+        <strong>${p.email}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-bottom:0.75rem;border-bottom:1px solid var(--gray-100)">
+        <span style="color:var(--gray-400);font-size:0.85rem">Téléphone</span>
+        <strong>${p.telephone || '—'}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-bottom:0.75rem;border-bottom:1px solid var(--gray-100)">
+        <span style="color:var(--gray-400);font-size:0.85rem">N° de compte</span>
+        <strong style="font-size:0.85rem">${formatNumero(p.numero_compte)}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-bottom:0.75rem;border-bottom:1px solid var(--gray-100)">
+        <span style="color:var(--gray-400);font-size:0.85rem">Type de compte</span>
+        <strong>${p.type_compte === 'courant' ? 'Courant' : 'Épargne'}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-bottom:0.75rem;border-bottom:1px solid var(--gray-100)">
+        <span style="color:var(--gray-400);font-size:0.85rem">Solde</span>
+        <strong style="color:var(--success)">${formatMontant(p.solde)} €</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span style="color:var(--gray-400);font-size:0.85rem">Membre depuis</span>
+        <strong>${formatDate(p.date_creation)}</strong>
+      </div>
+    </div>`;
+}
+
+async function changerMdp() {
+  const ancien = document.getElementById('ancien-mdp').value;
+  const nouveau = document.getElementById('nouveau-mdp').value;
+  if (!ancien || !nouveau) { showAlert('alert-mdp', 'Remplissez les deux champs.', 'danger'); return; }
+  const fd = new FormData();
+  fd.append('action','changer_mdp'); fd.append('ancien_mdp', ancien); fd.append('nouveau_mdp', nouveau);
+  const res = await fetch('php/client.php', { method:'POST', body:fd });
+  const data = await res.json();
+  showAlert('alert-mdp', data.message, data.success ? 'success' : 'danger');
+  if (data.success) { document.getElementById('ancien-mdp').value = ''; document.getElementById('nouveau-mdp').value = ''; }
+}
+
+// ==================== NOTIFICATIONS ====================
+async function loadNotifications() {
+  const res = await fetch('php/client.php?action=notifications');
+  const data = await res.json();
+  document.getElementById('badge-notifs').style.display = 'none';
+  if (!data.success || data.notifications.length === 0) {
+    document.getElementById('notifs-list').innerHTML = '<div class="empty-state"><div class="icon">🔔</div><p>Aucune notification</p></div>';
+    return;
+  }
+  document.getElementById('notifs-list').innerHTML = data.notifications.map(n => `
+    <div class="notif-item ${n.type}">
+      <div class="notif-title">${n.titre}</div>
+      <div>${n.message}</div>
+      <div class="notif-date">${formatDate(n.date_creation)}</div>
+    </div>`).join('');
+}
+
+// ==================== NAVIGATION ====================
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const navMap = {accueil:0, transactions:1, profil:2, notifications:3};
+  document.querySelectorAll('.nav-btn')[navMap[page]]?.classList.add('active');
+
+  if (page === 'transactions') loadHistorique();
+  if (page === 'profil') loadProfil();
+  if (page === 'notifications') loadNotifications();
+}
+
+// ==================== MODALS ====================
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('active'); });
+});
+
+// ==================== UTILS ====================
+function updateSolde(solde) {
+  document.getElementById('solde-value').textContent = formatMontant(solde);
+  document.getElementById('solde-modal-retrait').textContent = formatMontant(solde);
+  document.getElementById('solde-modal-virement').textContent = formatMontant(solde);
+}
+
+function formatMontant(n) { return parseFloat(n || 0).toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function formatNumero(n) { return n ? n.replace(/(.{4})/g,'$1 ').trim() : '—'; }
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function showGlobalAlert(msg, type) {
+  const el = document.getElementById('alert-global');
+  el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  setTimeout(() => el.innerHTML = '', 5000);
+}
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+}
+
+async function seDeconnecter() {
+  await fetch('php/auth.php?action=deconnexion');
+  window.location.href = 'index.html';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banque Christophe — Administration</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .admin-badge {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: var(--navy);
+      font-size: 0.72rem; font-weight: 700;
+      padding: 2px 8px; border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+    .client-row td { cursor: default; }
+    .action-cell { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+
+<div id="page-loader">
+  <div class="loader-logo">
+    <h1>🏦 Administration</h1>
+    <div class="loader-bar"></div>
+  </div>
+</div>
+
+<!-- NAVBAR ADMIN -->
+<nav class="navbar">
+  <a class="navbar-brand" href="#">
+    <div class="brand-icon">A</div>
+    <h1>Banque <span>Christophe</span></h1>
+  </a>
+  <div class="navbar-nav">
+    <button class="nav-btn active" onclick="showPage('dashboard')">📊 Dashboard</button>
+    <button class="nav-btn" onclick="showPage('clients')">👥 Clients</button>
+    <button class="nav-btn" onclick="showPage('depots')">📥 Dépôts</button>
+    <button class="nav-btn" onclick="showPage('transactions')">📋 Transactions</button>
+    <button class="nav-btn" onclick="showPage('rapport')">📈 Rapport</button>
+  </div>
+  <div class="navbar-user">
+    <span class="admin-badge">ADMIN</span>
+    <div class="user-avatar" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--navy)">C</div>
+    <span class="user-name">Christophe</span>
+    <button class="nav-logout" onclick="seDeconnecter()">Déconnexion</button>
+  </div>
+</nav>
+
+<div class="app-container">
+
+  <!-- ALERTE GLOBALE -->
+  <div id="alert-admin"></div>
+
+  <!-- ===== DASHBOARD ===== -->
+  <div id="page-dashboard" class="page active">
+    <h2 class="serif" style="font-size:1.8rem;margin-bottom:1.5rem;color:var(--navy)">Tableau de bord</h2>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)" id="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon navy">👥</div>
+        <div><div class="stat-value" id="stat-clients">—</div><div class="stat-label">Clients actifs</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gold">💰</div>
+        <div><div class="stat-value" id="stat-total-soldes">—</div><div class="stat-label">Total dépôts en banque (€)</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon success">📥</div>
+        <div><div class="stat-value" id="stat-depots-j">—</div><div class="stat-label">Dépôts aujourd'hui</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon danger">💸</div>
+        <div><div class="stat-value" id="stat-retraits-j">—</div><div class="stat-label">Retraits aujourd'hui</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon navy">↗️</div>
+        <div><div class="stat-value" id="stat-virements-j">—</div><div class="stat-label">Virements aujourd'hui</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gold">⏳</div>
+        <div><div class="stat-value" id="stat-demandes">—</div><div class="stat-label">Demandes en attente</div></div>
+      </div>
+    </div>
+
+    <!-- Dépôt rapide -->
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-header"><span class="card-title serif">⚡ Dépôt rapide</span></div>
+      <div id="alert-depot-rapide"></div>
+      <div class="form-row" style="align-items:flex-end;gap:1rem">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Rechercher le client / N° compte</label>
+          <input type="text" id="depot-search" class="form-control" placeholder="Nom, email ou numéro de compte..." oninput="rechercherClient()">
+          <div id="depot-search-results" style="margin-top:0.5rem"></div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Compte sélectionné</label>
+          <input type="text" id="depot-compte-info" class="form-control" placeholder="—" readonly style="background:var(--gray-100)">
+          <input type="hidden" id="depot-compte-id">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Montant (€)</label>
+          <input type="number" id="depot-montant" class="form-control" placeholder="0.00" min="1" step="0.01">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Description</label>
+          <input type="text" id="depot-desc" class="form-control" placeholder="Dépôt administrateur">
+        </div>
+        <button class="btn btn-gold" onclick="effectuerDepot()" id="btn-depot-rapide" style="flex-shrink:0">
+          Déposer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CLIENTS ===== -->
+  <div id="page-clients" class="page">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title serif">Gestion des clients</span>
+        <div style="display:flex;gap:0.5rem">
+          <input type="text" id="client-search" class="form-control" placeholder="Rechercher..." style="width:250px" oninput="filtrerClients()">
+        </div>
+      </div>
+      <div id="clients-table">
+        <div class="empty-state"><div class="icon">👥</div><p>Chargement...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DÉPÔTS (DEMANDES) ===== -->
+  <div id="page-depots" class="page">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title serif">Demandes de dépôt</span>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-outline btn-sm" onclick="loadDemandes('en_attente')">⏳ En attente</button>
+          <button class="btn btn-outline btn-sm" onclick="loadDemandes('toutes')">Toutes</button>
+        </div>
+      </div>
+      <div id="depots-table">
+        <div class="empty-state"><div class="icon">📥</div><p>Chargement...</p></div>
+      </div>
+    </div>
+
+    <!-- Section dépôt direct -->
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-header"><span class="card-title serif">Effectuer un dépôt direct</span></div>
+      <div id="alert-depot-direct"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Numéro de compte client</label>
+          <input type="text" id="direct-compte-search" class="form-control" placeholder="FR00000000000000" oninput="rechercherClientDirect()">
+          <div id="direct-search-results"></div>
+          <input type="hidden" id="direct-compte-id">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Montant (€)</label>
+          <input type="number" id="direct-montant" class="form-control" placeholder="0.00" min="1" step="0.01">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input type="text" id="direct-desc" class="form-control" placeholder="Motif du dépôt">
+      </div>
+      <button class="btn btn-gold" onclick="depotDirect()">Effectuer le dépôt</button>
+    </div>
+  </div>
+
+  <!-- ===== TRANSACTIONS ===== -->
+  <div id="page-transactions" class="page">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title serif">Toutes les transactions</span>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="loadTransactions('toutes',this)">Toutes</button>
+        <button class="tab-btn" onclick="loadTransactions('depot',this)">Dépôts</button>
+        <button class="tab-btn" onclick="loadTransactions('retrait',this)">Retraits</button>
+        <button class="tab-btn" onclick="loadTransactions('virement',this)">Virements</button>
+      </div>
+      <div id="tx-table">
+        <div class="empty-state"><div class="icon">📋</div><p>Chargement...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RAPPORT ===== -->
+  <div id="page-rapport" class="page">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title serif">Rapport mensuel</span>
+        <input type="month" id="rapport-mois" class="form-control" style="width:200px" onchange="loadRapport()">
+      </div>
+      <div id="rapport-content">
+        <div class="empty-state"><div class="icon">📈</div><p>Sélectionnez un mois</p></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL DÉTAIL CLIENT -->
+<div class="modal-overlay" id="modal-client">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-client-title">Détail client</span>
+      <button class="modal-close" onclick="closeModal('modal-client')">✕</button>
+    </div>
+    <div class="modal-body" id="modal-client-body">Chargement...</div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-client')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== INIT ====================
+let clientsData = [];
+let demandesData = [];
+
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('page-loader').classList.add('hidden'), 1500);
+});
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const session = await checkSession();
+  if (!session) return;
+  loadDashboardStats();
+  // Init mois courant
+  const now = new Date();
+  document.getElementById('rapport-mois').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+});
+
+async function checkSession() {
+  try {
+    const res = await fetch('php/auth.php?action=verifier_session');
+    const data = await res.json();
+    if (!data.connecte || data.role !== 'admin') { window.location.href = 'index.html'; return false; }
+    return true;
+  } catch { window.location.href = 'index.html'; return false; }
+}
+
+// ==================== STATS ====================
+async function loadDashboardStats() {
+  const res = await fetch('php/admin.php?action=dashboard');
+  const data = await res.json();
+  if (!data.success) return;
+  const s = data.stats;
+  document.getElementById('stat-clients').textContent = s.clients.nb;
+  document.getElementById('stat-total-soldes').textContent = formatMontant(s.clients.total_soldes);
+  document.getElementById('stat-depots-j').textContent = s.depots_jour.nb + ' (' + formatMontant(s.depots_jour.total) + ' €)';
+  document.getElementById('stat-retraits-j').textContent = s.retraits_jour.nb + ' (' + formatMontant(s.retraits_jour.total) + ' €)';
+  document.getElementById('stat-virements-j').textContent = s.virements_jour.nb + ' (' + formatMontant(s.virements_jour.total) + ' €)';
+  document.getElementById('stat-demandes').textContent = s.demandes_en_attente;
+  if (s.demandes_en_attente > 0) {
+    showAdminAlert(`⚠️ ${s.demandes_en_attente} demande(s) de dépôt en attente de traitement.`, 'warning');
+  }
+}
+
+// ==================== DÉPÔT RAPIDE ====================
+let searchTimeout;
+async function rechercherClient() {
+  clearTimeout(searchTimeout);
+  const q = document.getElementById('depot-search').value.trim();
+  if (q.length < 2) { document.getElementById('depot-search-results').innerHTML = ''; return; }
+  searchTimeout = setTimeout(async () => {
+    const res = await fetch(`php/admin.php?action=recherche_client&q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    const el = document.getElementById('depot-search-results');
+    if (!data.clients || !data.clients.length) { el.innerHTML = '<p style="font-size:0.8rem;color:var(--gray-400)">Aucun résultat</p>'; return; }
+    el.innerHTML = data.clients.map(c => `
+      <div onclick="selectClient('${c.compte_id}','${c.prenom} ${c.nom} — ${formatNumero(c.numero_compte)}')" 
+           style="padding:0.5rem 0.75rem;border-radius:8px;cursor:pointer;background:var(--gray-100);margin-bottom:4px;font-size:0.85rem;transition:var(--transition)"
+           onmouseover="this.style.background='var(--gold-pale)'" onmouseout="this.style.background='var(--gray-100)'">
+        <strong>${c.prenom} ${c.nom}</strong> — ${formatNumero(c.numero_compte)} — Solde: ${formatMontant(c.solde)} €
+      </div>`).join('');
+  }, 300);
+}
+
+function selectClient(id, label) {
+  document.getElementById('depot-compte-id').value = id;
+  document.getElementById('depot-compte-info').value = label;
+  document.getElementById('depot-search-results').innerHTML = '';
+  document.getElementById('depot-search').value = '';
+}
+
+async function effectuerDepot() {
+  const compteId = document.getElementById('depot-compte-id').value;
+  const montant = parseFloat(document.getElementById('depot-montant').value);
+  const desc = document.getElementById('depot-desc').value.trim() || 'Dépôt administrateur';
+  if (!compteId) { showAlert('alert-depot-rapide', 'Sélectionnez un client.', 'danger'); return; }
+  if (!montant || montant <= 0) { showAlert('alert-depot-rapide', 'Entrez un montant valide.', 'danger'); return; }
+
+  const btn = document.getElementById('btn-depot-rapide');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  const fd = new FormData();
+  fd.append('action','depot'); fd.append('compte_id', compteId); fd.append('montant', montant); fd.append('description', desc);
+  const res = await fetch('php/admin.php', { method:'POST', body:fd });
+  const data = await res.json();
+  if (data.success) {
+    showAlert('alert-depot-rapide', '✓ ' + data.message, 'success');
+    document.getElementById('depot-compte-id').value = '';
+    document.getElementById('depot-compte-info').value = '';
+    document.getElementById('depot-montant').value = '';
+    loadDashboardStats();
+  } else { showAlert('alert-depot-rapide', data.message, 'danger'); }
+  btn.disabled = false; btn.textContent = 'Déposer';
+}
+
+// ==================== CLIENTS ====================
+async function loadClients() {
+  const res = await fetch('php/admin.php?action=clients');
+  const data = await res.json();
+  if (!data.success) return;
+  clientsData = data.clients;
+  renderClients(clientsData);
+}
+
+function filtrerClients() {
+  const q = document.getElementById('client-search').value.toLowerCase();
+  const filtered = clientsData.filter(c =>
+    (c.nom + ' ' + c.prenom + ' ' + c.email + ' ' + c.numero_compte).toLowerCase().includes(q)
+  );
+  renderClients(filtered);
+}
+
+function renderClients(clients) {
+  if (!clients.length) {
+    document.getElementById('clients-table').innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>Aucun client</p></div>';
+    return;
+  }
+  const rows = clients.map(c => `
+    <tr class="client-row">
+      <td><strong>${c.prenom} ${c.nom}</strong><br><small style="color:var(--gray-400)">${c.email}</small></td>
+      <td><code style="font-size:0.75rem">${formatNumero(c.numero_compte)}</code></td>
+      <td>${c.type_compte === 'courant' ? 'Courant' : 'Épargne'}</td>
+      <td><strong>${formatMontant(c.solde)} €</strong></td>
+      <td><span class="status-badge status-${c.statut_compte}">${c.statut_compte}</span></td>
+      <td>${formatDate(c.date_creation)}</td>
+      <td>
+        <div class="action-cell">
+          <button class="btn btn-gold btn-sm" onclick="ouvrirDepotClient('${c.compte_id}','${c.prenom} ${c.nom}','${c.numero_compte}')">💰 Dépôt</button>
+          <button class="btn btn-outline btn-sm" onclick="toggleCompte('${c.compte_id}', '${c.statut_compte}', this)">
+            ${c.statut_compte === 'actif' ? '🔒 Suspendre' : '🔓 Activer'}
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="voirClient(${JSON.stringify(c).replace(/"/g,'&quot;')})">👁 Voir</button>
+        </div>
+      </td>
+    </tr>`).join('');
+  document.getElementById('clients-table').innerHTML = `
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Client</th><th>N° Compte</th><th>Type</th><th>Solde</th><th>Statut</th><th>Création</th><th>Actions</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function voirClient(c) {
+  document.getElementById('modal-client-title').textContent = `👤 ${c.prenom} ${c.nom}`;
+  document.getElementById('modal-client-body').innerHTML = `
+    <div style="display:grid;gap:0.75rem">
+      <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--gray-100);padding-bottom:0.6rem">
+        <span style="color:var(--gray-400);font-size:0.85rem">Email</span><strong>${c.email}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--gray-100);padding-bottom:0.6rem">
+        <span style="color:var(--gray-400);font-size:0.85rem">Téléphone</span><strong>${c.telephone || '—'}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--gray-100);padding-bottom:0.6rem">
+        <span style="color:var(--gray-400);font-size:0.85rem">N° de compte</span><code>${formatNumero(c.numero_compte)}</code>
+      </div>
+      <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--gray-100);padding-bottom:0.6rem">
+        <span style="color:var(--gray-400);font-size:0.85rem">Type de compte</span><strong>${c.type_compte}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--gray-100);padding-bottom:0.6rem">
+        <span style="color:var(--gray-400);font-size:0.85rem">Solde</span><strong style="color:var(--success);font-size:1.1rem">${formatMontant(c.solde)} €</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--gray-100);padding-bottom:0.6rem">
+        <span style="color:var(--gray-400);font-size:0.85rem">Statut compte</span><span class="status-badge status-${c.statut_compte}">${c.statut_compte}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--gray-100);padding-bottom:0.6rem">
+        <span style="color:var(--gray-400);font-size:0.85rem">Membre depuis</span><strong>${formatDate(c.date_creation)}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span style="color:var(--gray-400);font-size:0.85rem">Dernière connexion</span><strong>${formatDate(c.derniere_connexion)}</strong>
+      </div>
+    </div>`;
+  openModal('modal-client');
+}
+
+function ouvrirDepotClient(id, nom, numero) {
+  document.getElementById('direct-compte-id').value = id;
+  document.getElementById('direct-compte-search').value = `${nom} — ${formatNumero(numero)}`;
+  showPage('depots');
+}
+
+async function toggleCompte(id, statut, btn) {
+  if (!confirm(`Voulez-vous ${statut === 'actif' ? 'suspendre' : 'réactiver'} ce compte ?`)) return;
+  const fd = new FormData();
+  fd.append('action','toggle_compte'); fd.append('compte_id', id);
+  const res = await fetch('php/admin.php', { method:'POST', body:fd });
+  const data = await res.json();
+  if (data.success) {
+    showAdminAlert('✓ ' + data.message, 'success');
+    loadClients();
+  } else { showAdminAlert(data.message, 'danger'); }
+}
+
+// ==================== DEMANDES DÉPÔT ====================
+async function loadDemandes(filtre = 'en_attente') {
+  const res = await fetch('php/admin.php?action=demandes_depot');
+  const data = await res.json();
+  if (!data.success) return;
+  demandesData = data.demandes;
+  const filtered = filtre === 'toutes' ? demandesData : demandesData.filter(d => d.statut === filtre);
+
+  if (!filtered.length) {
+    document.getElementById('depots-table').innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>Aucune demande ' + (filtre === 'en_attente' ? 'en attente' : '') + '</p></div>';
+    return;
+  }
+  const rows = filtered.map(d => `
+    <tr>
+      <td>${formatDate(d.date_demande)}</td>
+      <td><strong>${d.nom_client}</strong><br><small>${d.email}</small></td>
+      <td><code style="font-size:0.75rem">${formatNumero(d.numero_compte)}</code></td>
+      <td><strong style="color:var(--success)">${formatMontant(d.montant)} €</strong></td>
+      <td style="max-width:200px;font-size:0.83rem">${d.motif || '—'}</td>
+      <td><span class="status-badge status-${d.statut}">${d.statut.replace('_',' ')}</span></td>
+      <td>
+        ${d.statut === 'en_attente' ? `
+          <div class="action-cell">
+            <button class="btn btn-success btn-sm" onclick="traiterDemande(${d.id}, 'approuve', this)">✓ Approuver</button>
+            <button class="btn btn-danger btn-sm" onclick="traiterDemande(${d.id}, 'refuse', this)">✕ Refuser</button>
+          </div>` : `<span style="color:var(--gray-400);font-size:0.8rem">${formatDate(d.date_traitement)}</span>`}
+      </td>
+    </tr>`).join('');
+
+  document.getElementById('depots-table').innerHTML = `
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Date demande</th><th>Client</th><th>Compte</th><th>Montant</th><th>Motif</th><th>Statut</th><th>Actions</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+async function traiterDemande(id, statut, btn) {
+  if (!confirm(`Voulez-vous ${statut === 'approuve' ? 'approuver' : 'refuser'} cette demande ?`)) return;
+  btn.disabled = true;
+  const fd = new FormData();
+  fd.append('action','demandes_depot'); fd.append('demande_id', id); fd.append('statut', statut);
+  const res = await fetch('php/admin.php', { method:'POST', body:fd });
+  const data = await res.json();
+  if (data.success) { showAdminAlert('✓ ' + data.message, 'success'); loadDemandes('en_attente'); loadDashboardStats(); }
+  else { showAdminAlert(data.message, 'danger'); btn.disabled = false; }
+}
+
+async function rechercherClientDirect() {
+  clearTimeout(searchTimeout);
+  const q = document.getElementById('direct-compte-search').value.trim();
+  if (q.length < 2) { document.getElementById('direct-search-results').innerHTML = ''; return; }
+  searchTimeout = setTimeout(async () => {
+    const res = await fetch(`php/admin.php?action=recherche_client&q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    const el = document.getElementById('direct-search-results');
+    if (!data.clients?.length) { el.innerHTML = ''; return; }
+    el.innerHTML = data.clients.map(c => `
+      <div onclick="selectClientDirect('${c.compte_id}','${c.prenom} ${c.nom} — ${formatNumero(c.numero_compte)}')" 
+           style="padding:0.5rem;border-radius:8px;cursor:pointer;background:var(--gray-100);margin-bottom:4px;font-size:0.83rem"
+           onmouseover="this.style.background='var(--gold-pale)'" onmouseout="this.style.background='var(--gray-100)'">
+        ${c.prenom} ${c.nom} — ${formatNumero(c.numero_compte)} — ${formatMontant(c.solde)} €
+      </div>`).join('');
+  }, 300);
+}
+
+function selectClientDirect(id, label) {
+  document.getElementById('direct-compte-id').value = id;
+  document.getElementById('direct-compte-search').value = label;
+  document.getElementById('direct-search-results').innerHTML = '';
+}
+
+async function depotDirect() {
+  const id = document.getElementById('direct-compte-id').value;
+  const montant = parseFloat(document.getElementById('direct-montant').value);
+  const desc = document.getElementById('direct-desc').value.trim() || 'Dépôt administrateur';
+  if (!id) { showAlert('alert-depot-direct', 'Sélectionnez un client.', 'danger'); return; }
+  if (!montant || montant <= 0) { showAlert('alert-depot-direct', 'Montant invalide.', 'danger'); return; }
+  const fd = new FormData();
+  fd.append('action','depot'); fd.append('compte_id', id); fd.append('montant', montant); fd.append('description', desc);
+  const res = await fetch('php/admin.php', { method:'POST', body:fd });
+  const data = await res.json();
+  if (data.success) {
+    showAlert('alert-depot-direct', '✓ ' + data.message, 'success');
+    document.getElementById('direct-compte-id').value = '';
+    document.getElementById('direct-compte-search').value = '';
+    document.getElementById('direct-montant').value = '';
+    loadDashboardStats();
+  } else { showAlert('alert-depot-direct', data.message, 'danger'); }
+}
+
+// ==================== TRANSACTIONS ====================
+async function loadTransactions(type = 'toutes', btn = null) {
+  if (btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  const res = await fetch(`php/admin.php?action=transactions&type=${type}&limit=100`);
+  const data = await res.json();
+  if (!data.success || !data.transactions.length) {
+    document.getElementById('tx-table').innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Aucune transaction</p></div>';
+    return;
+  }
+  const rows = data.transactions.map(t => {
+    const badgeClass = {depot:'badge-depot', retrait:'badge-retrait', virement:'badge-virement'}[t.type_transaction] || '';
+    const label = {depot:'📥 Dépôt', retrait:'💸 Retrait', virement:'↗️ Virement'}[t.type_transaction] || t.type_transaction;
+    return `<tr>
+      <td>${formatDate(t.date_transaction)}</td>
+      <td><span class="badge-tx ${badgeClass}">${label}</span></td>
+      <td style="font-size:0.83rem">${t.nom_source || '—'}</td>
+      <td style="font-size:0.83rem">${t.nom_dest || '—'}</td>
+      <td><strong>${formatMontant(t.montant)} €</strong></td>
+      <td style="font-size:0.75rem;color:var(--gray-400)">${t.reference}</td>
+      <td style="font-size:0.83rem;color:var(--gray-400)">${t.effectue_par_nom || 'Système'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('tx-table').innerHTML = `
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Date</th><th>Type</th><th>Émetteur</th><th>Destinataire</th><th>Montant</th><th>Référence</th><th>Par</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ==================== RAPPORT ====================
+async function loadRapport() {
+  const mois = document.getElementById('rapport-mois').value;
+  if (!mois) return;
+  const res = await fetch(`php/admin.php?action=rapport_mensuel&mois=${mois}`);
+  const data = await res.json();
+  const r = data.rapport || [];
+  const types = {depot:'📥 Dépôts', retrait:'💸 Retraits', virement:'↗️ Virements', frais:'🏦 Frais'};
+  const total = r.reduce((s, x) => s + parseFloat(x.total), 0);
+  const totalNb = r.reduce((s, x) => s + parseInt(x.nb), 0);
+
+  document.getElementById('rapport-content').innerHTML = `
+    <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:1.5rem">
+      ${r.map(x => `
+        <div class="stat-card">
+          <div class="stat-icon gold">${{depot:'📥',retrait:'💸',virement:'↗️',frais:'🏦'}[x.type_transaction]||'📊'}</div>
+          <div>
+            <div class="stat-value">${formatMontant(x.total)} €</div>
+            <div class="stat-label">${types[x.type_transaction] || x.type_transaction} (${x.nb} opérations)</div>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div class="card" style="background:var(--navy);color:var(--white)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:0.85rem;color:rgba(255,255,255,0.6)">Total volume transactions</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:2.5rem;color:var(--gold)">${formatMontant(total)} €</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:0.85rem;color:rgba(255,255,255,0.6)">Nombre d'opérations</div>
+          <div style="font-size:2rem;color:var(--white)">${totalNb}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ==================== NAVIGATION ====================
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const navMap = {dashboard:0, clients:1, depots:2, transactions:3, rapport:4};
+  document.querySelectorAll('.nav-btn')[navMap[page]]?.classList.add('active');
+
+  if (page === 'clients' && !clientsData.length) loadClients();
+  if (page === 'depots') loadDemandes('en_attente');
+  if (page === 'transactions') loadTransactions('toutes');
+  if (page === 'rapport') loadRapport();
+}
+
+// ==================== MODALS ====================
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+// ==================== UTILS ====================
+function formatMontant(n) { return parseFloat(n || 0).toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function formatNumero(n) { return n ? n.replace(/(.{4})/g,'$1 ').trim() : '—'; }
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function showAdminAlert(msg, type) {
+  const el = document.getElementById('alert-admin');
+  el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  setTimeout(() => el.innerHTML = '', 5000);
+}
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  if (el) { el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`; }
+}
+async function seDeconnecter() {
+  await fetch('php/auth.php?action=deconnexion');
+  window.location.href = 'index.html';
+}
+</script>
+</body>
+</html>
